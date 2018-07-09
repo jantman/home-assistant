@@ -107,6 +107,10 @@ class ZwaveDimmer(zwave.ZWaveDeviceEntity, Light):
         """Update internal properties based on zwave values."""
         # Brightness
         self._brightness, self._state = brightness_state(self.values.primary)
+        _LOGGER.info(
+            'ZwaveDimmer update_properties brightness=%s state=%s',
+            self._brightness, self._state
+        )
 
     def value_added(self):
         """Call when a new value is added to this entity."""
@@ -183,6 +187,7 @@ class ZwaveDimmer(zwave.ZWaveDeviceEntity, Light):
         """Turn the device on."""
         self._set_duration(**kwargs)
 
+        _LOGGER.info('ZwaveDimmer turn_on(%s)', kwargs)
         # Zwave multilevel switches use a range of [0, 99] to control
         # brightness. Level 255 means to set it to previous value.
         if ATTR_BRIGHTNESS in kwargs:
@@ -191,6 +196,10 @@ class ZwaveDimmer(zwave.ZWaveDeviceEntity, Light):
         else:
             brightness = 255
 
+        _LOGGER.info(
+            'About to call self.node.set_dimmer(%s, %s); self.node=%s',
+            self.values.primary.value_id, brightness, self.node
+        )
         if self.node.set_dimmer(self.values.primary.value_id, brightness):
             self._state = STATE_ON
 
@@ -198,6 +207,7 @@ class ZwaveDimmer(zwave.ZWaveDeviceEntity, Light):
         """Turn the device off."""
         self._set_duration(**kwargs)
 
+        _LOGGER.info('ZwaveDimmer turn_off(%s)', kwargs)
         if self.node.set_dimmer(self.values.primary.value_id, 0):
             self._state = STATE_OFF
 
@@ -230,15 +240,30 @@ class ZwaveColorLight(ZwaveDimmer):
         super().update_properties()
 
         if self.values.color is None:
+            _LOGGER.info(
+                'ZwaveColorLight update_properties() self.values.color is None'
+            )
             return
         if self.values.color_channels is None:
+            _LOGGER.info(
+                'ZwaveColorLight update_properties() '
+                'self.values.color_channels is None'
+            )
             return
 
         # Color Channels
         self._color_channels = self.values.color_channels.data
+        _LOGGER.info(
+            'ZwaveColorLight update_properties() color_channels=%s',
+            self._color_channels
+        )
 
         # Color Data String
         data = self.values.color.data
+        _LOGGER.info(
+            'ZwaveColorLight update_properties() self.values.color.data=%s',
+            data
+        )
 
         # RGB is always present in the openzwave color data string.
         rgb = [
@@ -246,6 +271,9 @@ class ZwaveColorLight(ZwaveDimmer):
             int(data[3:5], 16),
             int(data[5:7], 16)]
         self._hs = color_util.color_RGB_to_hs(*rgb)
+        _LOGGER.info(
+            'ZwaveColorLight update_properties() rgb=%s hs=%s', rgb, self._hs
+        )
 
         # Parse remaining color channels. Openzwave appends white channels
         # that are present.
@@ -265,6 +293,10 @@ class ZwaveColorLight(ZwaveDimmer):
         else:
             cold_white = 0
 
+        _LOGGER.info(
+            'ZwaveColorLight update_properties() warm_white=%s cold_white=%s',
+            warm_white, cold_white
+        )
         # Color temperature. With the AEOTEC ZW098 bulb, only two color
         # temperatures are supported. The warm and cold channel values
         # indicate brightness for warm/cold color temperature.
@@ -285,11 +317,17 @@ class ZwaveColorLight(ZwaveDimmer):
         elif self._color_channels & COLOR_CHANNEL_COLD_WHITE:
             self._white = cold_white
 
+        _LOGGER.info(
+            'ZwaveColorLight update_properties() ct=%s hs=%s white=%s',
+            self._ct, self._hs, self._white
+        )
+
         # If no rgb channels supported, report None.
         if not (self._color_channels & COLOR_CHANNEL_RED or
                 self._color_channels & COLOR_CHANNEL_GREEN or
                 self._color_channels & COLOR_CHANNEL_BLUE):
             self._hs = None
+            _LOGGER.info('ZwaveColorLight update_properties() set _hs to None')
 
     @property
     def hs_color(self):
@@ -308,6 +346,9 @@ class ZwaveColorLight(ZwaveDimmer):
 
     def turn_on(self, **kwargs):
         """Turn the device on."""
+        _LOGGER.info(
+            'ZwaveColorLight turn_on() called; kwargs=%s', kwargs
+        )
         rgbw = None
 
         if ATTR_WHITE_VALUE in kwargs:
@@ -340,4 +381,8 @@ class ZwaveColorLight(ZwaveDimmer):
         if rgbw and self.values.color:
             self.values.color.data = rgbw
 
+        _LOGGER.info(
+            'ZwaveColorLight turn_on() white=%s hs=%s values.color.data=%s',
+            self._white, self._hs, self.values.color.data
+        )
         super().turn_on(**kwargs)

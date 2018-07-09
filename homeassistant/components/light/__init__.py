@@ -246,6 +246,9 @@ def preprocess_turn_on_alternatives(params):
 
     color_name = params.pop(ATTR_COLOR_NAME, None)
     if color_name is not None:
+        _LOGGER.info(
+            'preprocess_turn_on_alternatives - color_name=%s', color_name
+        )
         try:
             params[ATTR_RGB_COLOR] = color_util.color_name_to_rgb(color_name)
         except ValueError:
@@ -255,19 +258,32 @@ def preprocess_turn_on_alternatives(params):
 
     kelvin = params.pop(ATTR_KELVIN, None)
     if kelvin is not None:
+        _LOGGER.info(
+            'preprocess_turn_on_alternatives - kelvin=%s', kelvin
+        )
         mired = color_util.color_temperature_kelvin_to_mired(kelvin)
         params[ATTR_COLOR_TEMP] = int(mired)
 
     brightness_pct = params.pop(ATTR_BRIGHTNESS_PCT, None)
     if brightness_pct is not None:
+        _LOGGER.info(
+            'preprocess_turn_on_alternatives - brightness_pct=%s',
+            brightness_pct
+        )
         params[ATTR_BRIGHTNESS] = int(255 * brightness_pct/100)
 
     xy_color = params.pop(ATTR_XY_COLOR, None)
     if xy_color is not None:
+        _LOGGER.info(
+            'preprocess_turn_on_alternatives - xy_color=%s', xy_color
+        )
         params[ATTR_HS_COLOR] = color_util.color_xy_to_hs(*xy_color)
 
     rgb_color = params.pop(ATTR_RGB_COLOR, None)
     if rgb_color is not None:
+        _LOGGER.info(
+            'preprocess_turn_on_alternatives - rgb_color=%s', rgb_color
+        )
         params[ATTR_HS_COLOR] = color_util.color_RGB_to_hs(*rgb_color)
 
 
