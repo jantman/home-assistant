@@ -369,6 +369,13 @@ class ZwaveColorLight(ZwaveDimmer):
         elif ATTR_HS_COLOR in kwargs:
             self._hs = kwargs[ATTR_HS_COLOR]
 
+        if self._hs is None or self._hs[1] == 0:
+            # saturation of 0 means white; turn on white LED
+            self._white = 255
+        else:
+            # else we have a color saturation, turn off white LED
+            self._white = 0
+
         if ATTR_WHITE_VALUE in kwargs or ATTR_HS_COLOR in kwargs:
             rgbw = '#'
             for colorval in color_util.color_hs_to_RGB(*self._hs):
